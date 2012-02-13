@@ -7,6 +7,7 @@ import (
 	"log"
 	"net"
 	"os"
+	"regexp"
 	"strings"
 )
 
@@ -59,14 +60,22 @@ func clientConns(listener net.Listener) (ch chan net.Conn) {
 
 func handleInput(logLine string) {
 	log.Printf("handleInput logLine=%v", logLine)
-	hLine := toHstore(trimKeys(logLine))
-	if len(hLine) > 0 {
-		log.Printf("insert into log_data data=%v", hLine)
-		_, err := pg.Exec("INSERT INTO log_data (data) VALUES ($1::hstore)", hLine)
+	logData := toHstore(trimKeys(logLine))
+	logTime := parseTime(logLine)
+	if len(logData) > 0 {
+		log.Printf("insert into log_data data=%v", logData)
+		_, err := pg.Exec("INSERT INTO log_data (data, time) VALUES ($1::hstore, $2)", logData, logTime)
 		if err != nil {
 			log.Printf("insert error message=%v", err)
 		}
 	}
+	return
+}
+
+func parseTime(logLine string) (time string) {
+	t, _ := regexp.Compile(`(\d\d\d\d)(-)?(\d\d)(-)?(\d\d)(T)?(\d\d)(:)?(\d\d)(:)?(\d\d)(\.\d+)?(Z|([+-])(\d\d)(:)?(\d\d))`)
+	time = t.FindString(logLine)
+	log.Printf("parsed time t=%v", time)
 	return
 }
 
@@ -85,24 +94,15 @@ func toHstore(kvs string) (string) {
   i.e. string="hi #foo name=ryan age=25" would return "name=ryan age=25"
 */
 func trimKeys(logLine string) (kvs string) {
-	kvs = ""
+	kv, _ := regexp.Compile("([a-z0-9]+)=([a-z0-9_.-]+)")
+	pairs := kv.FindAllString(logLine, -1)
+	max := len(pairs) - 1
 
-	if !(strings.Contains(logLine, "#wcld")) {
-		return
-	}
-
-	fields := strings.Fields(logLine)
-	max := len(fields) - 1
-
-	for i, elt := range fields {
+	for i, elt := range pairs {
 		log.Printf("processing elt=%v at position=%v max=%v", elt, i, max)
-		if strings.Contains(elt, "=") {
-			if !(strings.HasPrefix(elt, "=") && strings.HasSuffix(elt, "=")) {
-				kvs += elt
-				if i != max {
-					kvs += ", "
-				}
-			}
+		kvs += elt
+		if i != max {
+			kvs += ", "
 		}
 	}
 	return
