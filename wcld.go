@@ -86,6 +86,11 @@ func toHstore(kvs string) (string) {
 */
 func trimKeys(logLine string) (kvs string) {
 	kvs = ""
+
+	if !(strings.Contains(logLine, "#wcld")) {
+		return
+	}
+
 	fields := strings.Fields(logLine)
 	max := len(fields) - 1
 
