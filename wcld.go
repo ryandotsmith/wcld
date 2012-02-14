@@ -79,20 +79,10 @@ func parseTime(logLine string) (time string) {
 	return
 }
 
-/*
-  Takes a string like "name=ryan age=25" and converts in into "name=>ryan age=>25"
-*/
-
 func toHstore(kvs string) (string) {
 	return strings.Replace(kvs, "=", "=>", -1)
 }
 
-/*
-  Trims a string containing key=value substrings such that
-  the result is only the key=value substrings.
-
-  i.e. string="hi #foo name=ryan age=25" would return "name=ryan age=25"
-*/
 func trimKeys(logLine string) (kvs string) {
 	kv, _ := regexp.Compile("([a-z0-9]+)=([a-z0-9_.-]+)")
 	pairs := kv.FindAllString(logLine, -1)

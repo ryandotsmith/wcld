@@ -42,3 +42,12 @@ func TestToHstoreOnSQLLine(t *testing.T) {
 		t.Errorf("expected %v actual: %v", expected, actual)
 	}
 }
+
+func TestParseTime(t *testing.T) {
+	actual := parseTime("<13>1 2012-02-14T00:44:30+00:00 d.39c761b5-2e3a-4f93-9e68-2549c85650e2 app web.4 - - INFO: provider=3 #api_prepare_body key=value")
+	expected := "2012-02-14T00:44:30+00:00"
+
+	if actual != expected {
+		t.Errorf("expected %v actual: %v", expected, actual)
+	}
+}
