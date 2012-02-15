@@ -79,7 +79,7 @@ func parseTime(logLine string) (time string) {
 	return
 }
 
-func toHstore(kvs string) (string) {
+func toHstore(kvs string) string {
 	return strings.Replace(kvs, "=", "=>", -1)
 }
 
