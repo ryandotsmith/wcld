@@ -32,17 +32,6 @@ func main() {
 	}
 }
 
-func readData(client net.Conn) {
-	b := bufio.NewReadWriter(bufio.NewReader(client), bufio.NewWriter(client))
-	for {
-		line, err := b.ReadString('\n')
-		if err != nil {
-			break
-		}
-		handleInput(line)
-	}
-}
-
 func clientConns(listener net.Listener) (ch chan net.Conn) {
 	ch = make(chan net.Conn)
 	go func() {
@@ -56,6 +45,17 @@ func clientConns(listener net.Listener) (ch chan net.Conn) {
 		}
 	}()
 	return ch
+}
+
+func readData(client net.Conn) {
+	b := bufio.NewReadWriter(bufio.NewReader(client), bufio.NewWriter(client))
+	for {
+		line, err := b.ReadString('\n')
+		if err != nil {
+			break
+		}
+		handleInput(line)
+	}
 }
 
 func handleInput(logLine string) {
