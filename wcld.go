@@ -17,13 +17,13 @@ func main() {
 	var err error
 	pg, err = sql.Open("postgres", os.Getenv("DATABASE_URL"))
 	if err != nil {
-		log.Fatalf("unable to open postgres database: %v", err)
+		log.Fatalf("error=true action=db_conn message=%v", err)
 	}
 
 	log.Println("bind tcp", os.Getenv("PORT"))
 	server, err := net.Listen("tcp", "0.0.0.0:"+os.Getenv("PORT"))
 	if err != nil {
-		log.Fatalf("unable to bind to tcp: %v", err)
+		log.Fatalf("error=true action=net_listen message=%v", err)
 	}
 
 	conns := clientConns(server)
@@ -38,9 +38,9 @@ func clientConns(listener net.Listener) (ch chan net.Conn) {
 		for {
 			client, err := listener.Accept()
 			if err != nil {
-				log.Fatalf("unable to accept tcp packet: %v", err)
+				log.Printf("error=true action=tcp_accept message=%v", err)
 			}
-			log.Printf("accepted client addr: %v", client.RemoteAddr())
+			log.Printf("action=tcp_accept remote= %v", client.RemoteAddr())
 			ch <- client
 		}
 	}()
@@ -59,14 +59,14 @@ func readData(client net.Conn) {
 }
 
 func handleInput(logLine string) {
-	log.Printf("handleInput logLine=%v", logLine)
+	log.Printf("action=handleInput logLine=%v", logLine)
 	logData := toHstore(trimKeys(logLine))
 	logTime := parseTime(logLine)
 	if len(logData) > 0 {
-		log.Printf("insert into log_data data=%v", logData)
+		log.Printf("action=insert logData=%v logTime=%v", logData, logTime)
 		_, err := pg.Exec("INSERT INTO log_data (data, time) VALUES ($1::hstore, $2)", logData, logTime)
 		if err != nil {
-			log.Printf("insert error message=%v", err)
+			log.Printf("error=true action=insert  message=%v", err)
 		}
 	}
 	return
@@ -75,7 +75,7 @@ func handleInput(logLine string) {
 func parseTime(logLine string) (time string) {
 	t, _ := regexp.Compile(`(\d\d\d\d)(-)?(\d\d)(-)?(\d\d)(T)?(\d\d)(:)?(\d\d)(:)?(\d\d)(\.\d+)?(Z|([+-])(\d\d)(:)?(\d\d))`)
 	time = t.FindString(logLine)
-	log.Printf("parsed time t=%v", time)
+	log.Printf("action=parse_time t=%v", time)
 	return
 }
 
@@ -89,7 +89,7 @@ func trimKeys(logLine string) (kvs string) {
 	max := len(pairs) - 1
 
 	for i, elt := range pairs {
-		log.Printf("processing elt=%v at position=%v max=%v", elt, i, max)
+		log.Printf("action=process_element elt=%v position=%v max=%v", elt, i, max)
 		kvs += elt
 		if i != max {
 			kvs += ", "
