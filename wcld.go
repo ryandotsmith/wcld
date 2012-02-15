@@ -28,11 +28,11 @@ func main() {
 
 	conns := clientConns(server)
 	for {
-		go runD(<-conns)
+		go readData(<-conns)
 	}
 }
 
-func runD(client net.Conn) {
+func readData(client net.Conn) {
 	b := bufio.NewReadWriter(bufio.NewReader(client), bufio.NewWriter(client))
 	for {
 		line, err := b.ReadString('\n')
