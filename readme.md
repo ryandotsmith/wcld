@@ -9,15 +9,15 @@ to an hstore column in a postgres database.
 
 ## Usage
 
-Once you have deployed wcld to Heroku and add it's route as a log drain on your
-process, you can start to query the postgres database to report on the log data.
+Once your applications are draining their logs into a wcld process, you can
+begin reporting our your log data.
 
-On a typical web process, the Heroku router will emmit the folling log messages:
+On a typical web process, the Heroku router will emmit the folling log message:
 
 ```
 2012-02-16T06:06:16+00:00 heroku[router]: PUT shushu.herokuapp.com/resources/328408/billable_events/41143162 dyno=web.3 queue=0 wait=0ms service=89ms status=201 bytes=235
 ```
-Notice how the log message contains a pair with the key of service. This
+Notice how the log message contains the service time. This
 represents the time it took our web process to respond to the request. We can
 quickly group our app's average response time grouped by hour:
 
