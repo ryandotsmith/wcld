@@ -5,8 +5,8 @@ import (
 )
 
 func TestTrimKeys(t *testing.T) {
-	actual := trimKeys("#test name=ryan age=25")
-	expected := "name=ryan, age=25"
+	actual := trimKeys("#test name=ryan age=25 height-feet=6 height-inches=5 weight_lbs=210 _ssn=123")
+	expected := "name=ryan, age=25, height-feet=6, height-inches=5, weight_lbs=210, _ssn=123"
 
 	if actual != expected {
 		t.Errorf("expected %v actual: %v", expected, actual)
