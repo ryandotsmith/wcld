@@ -31,3 +31,21 @@ $ heroku pg:psql
 $ heroku scale wcld=1
 $ heroku routes:attach `heroku routes:create` wcld.1
 ```
+
+## Build Instructions
+
+```bash
+# Use Go weekly
+$ cd $GOROOT
+$ hg update weekly.2012-02-07
+$ cd src; ./all.sh
+$ cd $GOPATH/src
+$ git clone git://github.com/ryandotsmith/wcld.git
+$ go install wcld
+```
+
+## Testing Instructions
+
+```bash
+$ go test wcld
+```
