@@ -70,7 +70,7 @@ $ git add .
 $ git commit -am "init"
 $ heroku create -s cedar --buildpack=git://github.com/ryandotsmith/null-buildpack.git
 $ git push heroku master
-$ heroku addons:add heroku-postgresql:ika version=9.1
+$ heroku addons:add heroku-postgresql:ika --version=9.1
 $ heroku pg:psql
 - create table log_data (id bigserial, time timestamptz, data hstore);
 $ heroku scale wcld=1
