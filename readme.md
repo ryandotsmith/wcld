@@ -77,7 +77,7 @@ $ heroku scale wcld=1
 $ heroku routes:attach `heroku routes:create` wcld.1
 ```
 
-### Build Instructions
+### Build
 
 ```bash
 $ cd $GOROOT
@@ -88,7 +88,7 @@ $ git clone git://github.com/ryandotsmith/wcld.git
 $ go install wcld
 ```
 
-### Testing Instructions
+### Test
 
 ```bash
 $ go test wcld
