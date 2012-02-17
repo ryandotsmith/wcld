@@ -1,0 +1,7 @@
+v0.0.2 2012-02-16 Ryan Smith <ryan@heroku.com>
+
+* parse dashes and underscores for keys in log data
+
+v0.0.1 2012-02-14 Ryan Smith <ryan@heroku.com>
+
+* initial release
