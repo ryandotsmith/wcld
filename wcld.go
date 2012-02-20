@@ -84,7 +84,7 @@ func toHstore(kvs string) string {
 }
 
 func trimKeys(logLine string) (kvs string) {
-	kv, _ := regexp.Compile("([a-z0-9_.-]+)=([a-z0-9_.-]+)")
+	kv, _ := regexp.Compile(`([a-z0-9_.-]+)=("[^"]+"|[a-z0-9_.-]+)`)
 	pairs := kv.FindAllString(logLine, -1)
 	max := len(pairs) - 1
 
