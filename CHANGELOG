@@ -1,6 +1,8 @@
-v0.0.2 2012-02-16 Ryan Smith <ryan@heroku.com>
+v0.0.2 2012-02-20 Ryan Smith <ryan@heroku.com>
 
 * parse dashes and underscores for keys in log data
+* parse multi-word values when quoted
+* only parse logLines that contain a k=v signature
 
 v0.0.1 2012-02-14 Ryan Smith <ryan@heroku.com>
 
