@@ -83,7 +83,7 @@ $ heroku routes:attach `heroku routes:create` wcld.1
 ```bash
 $ cd $GOROOT
 $ hg update weekly.2012-02-07
-$ cd src; ./all.sh
+$ cd src; ./all.bash
 $ cd $GOPATH/src
 $ git clone git://github.com/ryandotsmith/wcld.git
 $ go install wcld
