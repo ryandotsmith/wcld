@@ -2,17 +2,17 @@
 
 wc -l (daemon)
 
-Wcld is a process that will listen on TCP $PORT for incomming syslog data.
-Wcld will parse the *crnl* sperated data looking for key=value substrings.
+Wcld is a process that will listen on TCP $PORT for incoming syslog data.
+Wcld will parse the *crnl* separated data looking for key=value substrings.
 When a key=value substring is found, wcld will write the keys and values
-to an hstore column in a postgres database.
+to an hstore column in a PostgreSQL database.
 
 ## Usage
 
 Once your applications are draining their logs into a wcld process, you can
 begin reporting our your log data.
 
-On a typical web process, the Heroku router will emmit the folling log message:
+On a typical web process, the Heroku router will emit the following log message:
 
 ```
 2012-02-16T06:06:16+00:00 heroku[router]: PUT shushu.herokuapp.com/resources/328408/billable_events/41143162 dyno=web.3 queue=0 wait=0ms service=89ms status=201 bytes=235
@@ -83,7 +83,7 @@ $ heroku routes:attach `heroku routes:create` wcld.1
 ```bash
 $ cd $GOROOT
 $ hg update weekly.2012-02-07
-$ cd src; ./all.sh
+$ cd src; ./all.bash
 $ cd $GOPATH/src
 $ git clone git://github.com/ryandotsmith/wcld.git
 $ go install wcld
