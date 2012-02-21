@@ -74,28 +74,24 @@ func handleInput(logLine string) {
 	return
 }
 
-func toHstore(logLine string) (res string) {
-	if kvSig.FindAllString(logLine, -1) != nil {
-		kvs := trimKeys(logLine)
-		res = strings.Replace(kvs, "=", "=>", -1)
-	} else {
-		res = ""
-	}
-	return
-}
-
-func trimKeys(logLine string) (kvs string) {
+func toHstore(logLine string) (kvs string) {
 	words := kvData.FindAllString(logLine, -1)
 	max := len(words) - 1
-	for i, elt := range words {
-		if strings.Contains(elt, "=") {
-			kvs += elt
-		} else {
-			kvs += elt + "=true"
+	hasSig := kvSig.FindAllString(logLine, -1)
+	if hasSig != nil {
+		for i, elt := range words {
+			if strings.Contains(elt, "=") {
+				kvs += elt
+			} else {
+				kvs += elt + "=true"
+			}
+			if i != max {
+				kvs += ", "
+			}
 		}
-		if i != max {
-			kvs += ", "
-		}
+		kvs = strings.Replace(kvs, "=", "=>", -1)
+	} else {
+		kvs = `message=>"` + logLine + `"`
 	}
 	return
 }

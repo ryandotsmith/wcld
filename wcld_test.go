@@ -4,30 +4,22 @@ import (
 	"testing"
 )
 
-func TestMakeKeys(t *testing.T) {
-	actual := trimKeys("hello world")
-	expected := "hello=true, world=true"
+func TestToHstore(t *testing.T) {
+	actual := toHstore(`test name=ryan age=25 height-feet=6 height-inches=5 weight_lbs=210 _ssn=123 fav_quote="oh hai"`)
+	expected := `test=>true, name=>ryan, age=>25, height-feet=>6, height-inches=>5, weight_lbs=>210, _ssn=>123, fav_quote=>"oh hai"`
+
+
+	if actual != expected {
+		t.Errorf("\n e(%v) \n a(%v)", expected, actual)
+	}
+}
+
+func TestDataNotMatchingSig(t *testing.T) {
+	actual := toHstore("hello world")
+	expected := `message=>"hello world"`
 
 	if actual != expected {
 		t.Errorf("expected(%v) actual(%v)", expected, actual)
-	}
-}
-
-func TestTrimKeys(t *testing.T) {
-	actual := trimKeys(`name=ryan age=25 height-feet=6 height-inches=5 weight_lbs=210 _ssn=123 fav_quote="oh hai"`)
-	expected := `name=ryan, age=25, height-feet=6, height-inches=5, weight_lbs=210, _ssn=123, fav_quote="oh hai"`
-
-	if actual != expected {
-		t.Errorf("\n e(%v) \n a(%v)", expected, actual)
-	}
-}
-
-func TestToHstore(t *testing.T) {
-	actual := toHstore("test name=ryan age=25")
-	expected := "test=>true, name=>ryan, age=>25"
-
-	if actual != expected {
-		t.Errorf("\n e(%v) \n a(%v)", expected, actual)
 	}
 }
 
@@ -41,8 +33,9 @@ func TestToHstoreOnRouterLine(t *testing.T) {
 }
 
 func TestToHstoreOnSQLLine(t *testing.T) {
-	actual := toHstore(`DEBUG: (0.000863s) INSERT INTO "billable_events" ("provider_id", "rate_code_id", "entity_id", "hid", "qty", "product_name", "time", "state", "created_at") VALUES (5, 2, '40531942', '369504', 1, 'worker', '2012-02-13 18:36:30.000000+0000', 'open', '2012-02-13 18:36:49.810784+0000') RETURNING *`)
-	expected := ""
+	sqlLine := `DEBUG: (0.000863s) INSERT INTO "billable_events" ("provider_id", "rate_code_id", "entity_id", "hid", "qty", "product_name", "time", "state", "created_at") VALUES (5, 2, '40531942', '369504', 1, 'worker', '2012-02-13 18:36:30.000000+0000', 'open', '2012-02-13 18:36:49.810784+0000') RETURNING *`
+	actual := toHstore(sqlLine)
+	expected := `message=>"` + sqlLine + `"`
 
 	if actual != expected {
 		t.Errorf("\n e(%v) \n a(%v)", expected, actual)
