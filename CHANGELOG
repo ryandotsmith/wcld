@@ -1,3 +1,8 @@
+v0.0.2 2012-02-21 Ryan Smith <ryan@heroku.com>
+
+* correct escaping issue
+* rely on syslog regex for time parsing
+
 v0.0.2 2012-02-20 Ryan Smith <ryan@heroku.com>
 
 * parse dashes and underscores for keys in log data

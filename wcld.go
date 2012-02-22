@@ -14,8 +14,8 @@ import (
 var pg *sql.DB
 
 var kvSig = regexp.MustCompile(`([a-zA-Z0-9\.\_\-\:\/])=([a-zA-Z0-9\.\_\-\:\/\"])`)
-var kvData = regexp.MustCompile(`([a-zA-Z0-9\.\_\-\:\/]+)(=?)("[^"]+"|[a-zA-Z0-9\.\_\-\:\/]*)`)
-var timeSig = regexp.MustCompile(`(\d\d\d\d)(-)?(\d\d)(-)?(\d\d)(T)?(\d\d)(:)?(\d\d)(:)?(\d\d)(\.\d+)?(Z|([+-])(\d\d)(:)?(\d\d))`)
+var kvData = regexp.MustCompile(`([a-zA-Z0-9\.\_\-\:\/]+)(=?)("[^"]+"|'[^']+'|[a-zA-Z0-9\.\_\-\:\/]*)`)
+var syslogData = regexp.MustCompile(`^(\d+) (<\d+>\d+) (\d\d\d\d-\d\d-\d\dT\d\d:\d\d:\d\d(\.\d+)?[\-\+]\d\d:00) ([a-zA-Z0-9\.\-]+) ([a-zA-Z0-9]+) ([a-zA-Z0-9\.]+) ([-]) ([-]) (.*)`)
 
 func main() {
 	var err error
@@ -62,7 +62,7 @@ func readData(client net.Conn) {
 
 func handleInput(logLine string) {
 	log.Printf("action=handleInput logLine=%v", logLine)
-	logTime := timeSig.FindString(logLine)
+	logTime := syslogData.FindStringSubmatch(logLine)[3]
 	logData := toHstore(logLine)
 	if len(logData) > 0 {
 		log.Printf("action=insert logData=%v logTime=%v", logData, logTime)
@@ -74,24 +74,28 @@ func handleInput(logLine string) {
 	return
 }
 
-func toHstore(logLine string) (kvs string) {
-	words := kvData.FindAllString(logLine, -1)
+func toHstore(logLine string) string {
+	message := syslogData.FindStringSubmatch(logLine)[10]
+	words := kvData.FindAllString(message, -1)
 	max := len(words) - 1
-	hasSig := kvSig.FindAllString(logLine, -1)
+	hasSig := kvSig.FindAllString(message, -1)
+	kvs := ""
+
 	if hasSig != nil {
 		for i, elt := range words {
 			if strings.Contains(elt, "=") {
 				kvs += elt
 			} else {
-				kvs += elt + "=true"
+				elt = strings.Replace(elt, `"`, `'`, -1)
+				kvs += `"` + elt + `"` + "=true"
 			}
 			if i != max {
 				kvs += ", "
 			}
 		}
-		kvs = strings.Replace(kvs, "=", "=>", -1)
 	} else {
-		kvs = `message=>"` + logLine + `"`
+		message = strings.Replace(message, `"`, `'`, -1)
+		kvs = `message="` + message + `"`
 	}
-	return
+	return strings.Replace(kvs, "=", "=>", -1)
 }

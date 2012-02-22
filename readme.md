@@ -51,6 +51,18 @@ WHERE
  2012-02-14 03:00:00+00 | 00:00:00.073081
 ```
 
+### Indicies
+
+One possible indexing strategy:
+
+```sql
+ALTER TABLE log_data ADD COLUMN expired boolean default false;
+UPDATE log_data SET expired = 't' where time <= now() - '3 days'::interval;
+CREATE INDEX recent_events on log_data (time) where expired = false;
+-- use crom to REINDEX each day ??
+```
+
+
 ## Setup
 
 Download the binary from github and run it on Heroku using the null-buildpack.
