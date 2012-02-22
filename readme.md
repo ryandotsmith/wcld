@@ -69,11 +69,13 @@ Download the binary from github and run it on Heroku using the null-buildpack.
 
 ### Deploy to Heroku
 
+Deploy the receiver app:
+
 ```bash
 $ mkdir wcld
 $ cd wcld
 $ mkdir bin
-$ curl -L -o wcld.tar.gz "https://github.com/downloads/ryandotsmith/wcld/wcld.tar.gz"
+$ curl -L -o wcld.tar.gz "https://github.com/downloads/ryandotsmith/wcld/wcld-0.0.3.tar.gz"
 $ tar -xvzf wcld.tar.gz -C bin/
 $ rm *.tar.gz
 $ echo "wcld: bin/wcld" >> Procfile
@@ -81,14 +83,25 @@ $ git init
 $ git add .
 $ git commit -am "init"
 $ heroku create -s cedar --buildpack=git://github.com/ryandotsmith/null-buildpack.git
-$ git push heroku master
 $ heroku addons:add heroku-postgresql:ika --version=9.1
-$ heroku pg:
+$ heroku pg:wait
+$ heroku pg:promote HEROKU_POSTGRESQL_<COLOR>
+$ heroku pg:psql
 psql- create extension hstore;
 psql- create table log_data (id bigserial, time timestamptz, data hstore);
-$ heroku scale wcld=1
-$ heroku routes:attach `heroku routes:create` wcld.1
+psql- create index index_log_data_by_time on log_data (time);
+$ git push heroku master
+$ heroku scale wcld=2
+$ heroku routes:create
+$ heroku routes:attach tcp://... wcld
 ```
+
+Use it to drain an emitter app:
+
+```bash
+$ heroku drains:add syslog://... -a other-app
+```
+
 
 ### Build
 
