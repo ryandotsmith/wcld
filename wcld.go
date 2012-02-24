@@ -83,10 +83,11 @@ func toHstore(logLine string) string {
 
 	if hasSig != nil {
 		for i, elt := range words {
-			if strings.Contains(elt, "=") {
+			if kvSig.MatchString(elt) {
 				kvs += elt
+			} else if m, _ := regexp.MatchString(`\w+=`, elt); m == true {
+				kvs += elt + `""`
 			} else {
-				elt = strings.Replace(elt, `"`, `'`, -1)
 				kvs += `"` + elt + `"` + "=true"
 			}
 			if i != max {
