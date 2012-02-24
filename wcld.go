@@ -13,10 +13,6 @@ import (
 
 var pg *sql.DB
 
-var kvSig = regexp.MustCompile(`([a-zA-Z0-9\.\_\-\:\/])=([a-zA-Z0-9\.\_\-\:\/\"])`)
-var kvData = regexp.MustCompile(`([a-zA-Z0-9\.\_\-\:\/]+)(=?)("[^"]+"|'[^']+'|[a-zA-Z0-9\.\_\-\:\/]*)`)
-var syslogData = regexp.MustCompile(`^(\d+) (<\d+>\d+) (\d\d\d\d-\d\d-\d\dT\d\d:\d\d:\d\d(\.\d+)?[\-\+]\d\d:00) ([a-zA-Z0-9\.\-]+) ([a-zA-Z0-9]+) ([a-zA-Z0-9\.]+) ([-]) ([-]) (.*)`)
-
 func main() {
 	var err error
 	pg, err = sql.Open("postgres", os.Getenv("DATABASE_URL"))
@@ -62,7 +58,7 @@ func readData(client net.Conn) {
 
 func handleInput(logLine string) {
 	log.Printf("action=handleInput logLine=%v", logLine)
-	logTime := syslogData.FindStringSubmatch(logLine)[3]
+	logTime := SyslogData.FindStringSubmatch(logLine)[3]
 	logData := toHstore(logLine)
 	if len(logData) > 0 {
 		log.Printf("action=insert logData=%v logTime=%v", logData, logTime)
@@ -75,17 +71,17 @@ func handleInput(logLine string) {
 }
 
 func toHstore(logLine string) string {
-	message := syslogData.FindStringSubmatch(logLine)[10]
-	words := kvData.FindAllString(message, -1)
+	message := SyslogData.FindStringSubmatch(logLine)[10]
+	words := KvData.FindAllString(message, -1)
 	max := len(words) - 1
-	hasSig := kvSig.FindAllString(message, -1)
+	hasSig := KvSig.FindAllString(message, -1)
 	kvs := ""
 
 	if hasSig != nil {
 		for i, elt := range words {
-			if kvSig.MatchString(elt) {
+			if KvSig.MatchString(elt) {
 				kvs += elt
-			} else if m, _ := regexp.MatchString(`\w+=`, elt); m == true {
+			} else if m, _ := regexp.MatchString(`\w+=`, elt); m {
 				kvs += elt + `""`
 			} else {
 				kvs += `"` + elt + `"` + "=true"

@@ -41,7 +41,7 @@ func TestToHstoreOnSQLLine(t *testing.T) {
 }
 
 func TestParseSysLog(t *testing.T) {
-	match := syslogData.FindStringSubmatch(`150 <13>1 2012-02-14T00:44:30+00:00 d.39c761b5-2e3a-4f93-9e68-2549c85650e2 app web.4 - - info=true provider=3 #api_prepare_body key=value time="2012-01-01 00:00:00"`)
+	match := SyslogData.FindStringSubmatch(`150 <13>1 2012-02-14T00:44:30+00:00 d.39c761b5-2e3a-4f93-9e68-2549c85650e2 app web.4 - - info=true provider=3 #api_prepare_body key=value time="2012-01-01 00:00:00"`)
 	actual := match[10]
 	expected := `info=true provider=3 #api_prepare_body key=value time="2012-01-01 00:00:00"`
 
@@ -51,7 +51,7 @@ func TestParseSysLog(t *testing.T) {
 }
 
 func TestParseTime(t *testing.T) {
-	match := syslogData.FindStringSubmatch(`150 <13>1 2012-02-14T00:44:30+00:00 d.39c761b5-2e3a-4f93-9e68-2549c85650e2 app web.4 - - INFO: provider=3 #api_prepare_body key=value time="2012-01-01 00:00:00"`)
+	match := SyslogData.FindStringSubmatch(`150 <13>1 2012-02-14T00:44:30+00:00 d.39c761b5-2e3a-4f93-9e68-2549c85650e2 app web.4 - - INFO: provider=3 #api_prepare_body key=value time="2012-01-01 00:00:00"`)
 	actual := match[3]
 	expected := "2012-02-14T00:44:30+00:00"
 
