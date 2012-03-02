@@ -2,7 +2,10 @@ package main
 
 import (
 	"regexp"
+	"os"
 )
+
+var AcceptPattern = os.Getenv("ACCEPT_PATTERN")
 
 var KvSig = regexp.MustCompile(`([a-zA-Z0-9\.\_\-\:\/])=([a-zA-Z0-9\.\_\-\:\/\"\'])`)
 

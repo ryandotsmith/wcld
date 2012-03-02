@@ -71,6 +71,9 @@ func handleInput(logLine string) {
 }
 
 func toHstore(logLine string) string {
+  if m, _ := regexp.MatchString(AcceptPattern, logLine); !m {
+    return ""
+  }
 	message := SyslogData.FindStringSubmatch(logLine)[10]
 	words := KvData.FindAllString(message, -1)
 	max := len(words) - 1
