@@ -7,7 +7,6 @@ import (
 	"log"
 	"net"
 	"os"
-	"regexp"
 	"strings"
 )
 
@@ -71,7 +70,7 @@ func handleInput(logLine string) {
 }
 
 func toHstore(logLine string) string {
-  if m, _ := regexp.MatchString(AcceptPattern, logLine); !m {
+  if !AcceptPattern.MatchString(logLine) {
     return ""
   }
 	message := SyslogData.FindStringSubmatch(logLine)[10]
@@ -84,7 +83,7 @@ func toHstore(logLine string) string {
 		for i, elt := range words {
 			if KvSig.MatchString(elt) {
 				kvs += elt
-			} else if m, _ := regexp.MatchString(`\w+=`, elt); m {
+			} else if KeyPattern.MatchString(elt) {
 				kvs += elt + `""`
 			} else {
 				kvs += `"` + elt + `"` + "=true"

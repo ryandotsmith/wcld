@@ -5,7 +5,9 @@ import (
 	"os"
 )
 
-var AcceptPattern = os.Getenv("ACCEPT_PATTERN")
+var AcceptPattern = regexp.MustCompile( os.Getenv("ACCEPT_PATTERN") )
+
+var KeyPattern = regexp.MustCompile(`\w+=`)
 
 var KvSig = regexp.MustCompile(`([a-zA-Z0-9\.\_\-\:\/])=([a-zA-Z0-9\.\_\-\:\/\"\'])`)
 
