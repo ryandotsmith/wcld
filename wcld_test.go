@@ -2,11 +2,36 @@ package main
 
 import (
 	"testing"
+	"regexp"
 )
 
 func TestToHstore(t *testing.T) {
 	actual := toHstore(`150 <13>1 2012-02-14T00:44:30+00:00 d.39c761b5-2e3a-4f93-9e68-2549c85650e2 app web.4 - - test name=ryan age=25 height-feet=6 height-inches=5 weight_lbs=210 _ssn=123 description= fav_quote="oh hai"`)
 	expected := `"test"=>true, name=>ryan, age=>25, height-feet=>6, height-inches=>5, weight_lbs=>210, _ssn=>123, description=>"", fav_quote=>"oh hai"`
+
+	if actual != expected {
+		t.Errorf("\n e(%v) \n a(%v)", expected, actual)
+	}
+}
+
+func TestToHstoreFilteredMatched(t *testing.T) {
+  var oldPattern = AcceptPattern
+  AcceptPattern = regexp.MustCompile(`important=true`)
+	actual := toHstore(`150 <13>1 2012-02-14T00:44:30+00:00 d.39c761b5-2e3a-4f93-9e68-2549c85650e2 app web.4 - - test important=true name=ryan age=25 height-feet=6 height-inches=5 weight_lbs=210 _ssn=123 description= fav_quote="oh hai"`)
+	expected := `"test"=>true, important=>true, name=>ryan, age=>25, height-feet=>6, height-inches=>5, weight_lbs=>210, _ssn=>123, description=>"", fav_quote=>"oh hai"`
+  AcceptPattern = oldPattern
+
+	if actual != expected {
+		t.Errorf("\n e(%v) \n a(%v)", expected, actual)
+	}
+}
+
+func TestToHstoreFilteredNotMatched(t *testing.T) {
+  var oldPattern = AcceptPattern
+  AcceptPattern = regexp.MustCompile(`important=true`)
+	actual := toHstore(`150 <13>1 2012-02-14T00:44:30+00:00 d.39c761b5-2e3a-4f93-9e68-2549c85650e2 app web.4 - - test name=ryan age=25 height-feet=6 height-inches=5 weight_lbs=210 _ssn=123 description= fav_quote="oh hai"`)
+	expected := ``
+  AcceptPattern = oldPattern
 
 	if actual != expected {
 		t.Errorf("\n e(%v) \n a(%v)", expected, actual)
