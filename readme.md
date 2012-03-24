@@ -117,7 +117,7 @@ $ git init
 $ git add .
 $ git commit -am "init"
 $ heroku create -s cedar --buildpack=git://github.com/ryandotsmith/null-buildpack.git
-$ heroku addons:add heroku-postgresql:ika --version=9.1
+$ heroku addons:add heroku-postgresql:ika
 $ heroku pg:wait
 $ heroku pg:promote HEROKU_POSTGRESQL_<COLOR>
 $ heroku pg:psql
