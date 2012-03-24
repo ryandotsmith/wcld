@@ -3,14 +3,15 @@ package main
 import (
 	"bufio"
 	"database/sql"
-	_ "github.com/bmizerany/pq.go"
+	"encoding/json"
+	_ "github.com/bmizerany/pq"
 	"log"
 	"net"
 	"os"
 	"regexp"
-	"strings"
 )
 
+var syslogData = regexp.MustCompile(`^(\d+) (<\d+>\d+) (\d\d\d\d-\d\d-\d\dT\d\d:\d\d:\d\d(\.\d+)?[\-\+]\d\d:00) ([a-zA-Z0-9\.\-]+) ([a-zA-Z0-9]+) ([a-zA-Z0-9\.]+) ([-]) ([-]) (.*)`)
 var pg *sql.DB
 
 func main() {
@@ -58,22 +59,10 @@ func readData(client net.Conn) {
 
 func handleInput(logLine string) {
 	log.Printf("action=handleInput logLine=%v", logLine)
-
-	if len(logLine) == 0 {
-	  return
-	}
-
-	logTime := ""
-	logString := SyslogData.FindStringSubmatch(logLine)
-	if len(logString) > 3 {
-	  logTime = logString[3]
-	}
-
-	logData := toHstore(logLine)
-
-	if len(logData) > 0 && len(logTime) > 0 {
-		log.Printf("action=insert logData=%v logTime=%v", logData, logTime)
-		_, err := pg.Exec("INSERT INTO log_data (data, time) VALUES ($1::hstore, $2)", logData, logTime)
+	time, data := parseLogLine(logLine)
+	if len(time) > 0 && len(data) > 0 {
+		log.Printf("action=insert time=%v data=%v", time, data)
+		_, err := pg.Exec("INSERT INTO log_data(time, data) VALUES ($1::hstore, $2)", time, data)
 		if err != nil {
 			log.Printf("error=true action=insert  message=%v", err)
 		}
@@ -81,33 +70,31 @@ func handleInput(logLine string) {
 	return
 }
 
-func toHstore(logLine string) string {
-	message := ""
-	logString := SyslogData.FindStringSubmatch(logLine)
-	if len(logString) > 10 {
-	  message = logString[10]
-	}
-	words := KvData.FindAllString(message, -1)
-	max := len(words) - 1
-	hasSig := KvSig.FindAllString(message, -1)
-	kvs := ""
+func parseLogLine(logLine string) (time string, data string) {
+	matches := syslogData.FindStringSubmatch(logLine)
 
-	if hasSig != nil {
-		for i, elt := range words {
-			if KvSig.MatchString(elt) {
-				kvs += elt
-			} else if m, _ := regexp.MatchString(`\w+=`, elt); m {
-				kvs += elt + `""`
-			} else {
-				kvs += `"` + elt + `"` + "=true"
-			}
-			if i != max {
-				kvs += ", "
-			}
-		}
-	} else {
-		message = strings.Replace(message, `"`, `'`, -1)
-		kvs = `message="` + message + `"`
+	if len(matches) >= 3 {
+		time = matches[3]
 	}
-	return strings.Replace(kvs, "=", "=>", -1)
+
+	if len(matches) >= 10 {
+		data = hstore(getPayload(matches[10]))
+	}
+	return
+}
+
+func getPayload(payLoadStr string) (payLoad map[string]interface{}) {
+	log.Printf("payLoadStr=%v", payLoadStr)
+	if e := json.Unmarshal([]byte(payLoadStr), &payLoad); e != nil {
+		log.Printf("error=%v", e)
+		payLoad = map[string]interface{}{}
+	}
+	return
+}
+
+func hstore(data map[string]interface{}) (hstore string) {
+	for k, v := range data {
+		hstore += `"` + string(k) + `"` + ` => ` + `"` + v.(string) + `"`
+	}
+	return
 }

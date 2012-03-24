@@ -4,14 +4,39 @@ import (
 	"testing"
 )
 
+func TestGetPayload(t *testing.T) {
+	time, data := parseLogLine(`150 <13>1 2012-02-14T00:44:30+00:00 d.39c761b5-2e3a-4f93-9e68-2549c85650e2 app web.4 - - {"hello": "world"}`)
+	expected_time := "2012-02-14T00:44:30+00:00"
+	expected_data := `"hello" => "world"`
+
+	if time != expected_time {
+		t.Errorf("\n e(%v) \n a(%v)", expected_time, time)
+	}
+	if data != expected_data {
+		t.Errorf("\n e(%v) \n a(%v)", expected_data, data)
+	}
+}
+
 func TestToHstore(t *testing.T) {
-	actual := toHstore(`150 <13>1 2012-02-14T00:44:30+00:00 d.39c761b5-2e3a-4f93-9e68-2549c85650e2 app web.4 - - test name=ryan age=25 height-feet=6 height-inches=5 weight_lbs=210 _ssn=123 description= fav_quote="oh hai"`)
-	expected := `"test"=>true, name=>ryan, age=>25, height-feet=>6, height-inches=>5, weight_lbs=>210, _ssn=>123, description=>"", fav_quote=>"oh hai"`
+	m := map[string]interface{}{"hello": "world"}
+	actual := hstore(m)
+	expected := `"hello" => "world"`
 
 	if actual != expected {
 		t.Errorf("\n e(%v) \n a(%v)", expected, actual)
 	}
 }
+
+/*
+func TestToHstoreOnBlank(t *testing.T) {
+	actual := toHstore(``)
+	expected := ``
+
+	if actual != expected {
+		t.Errorf("\n e(%v) \n a(%v)", expected, actual)
+	}
+}
+
 
 func TestDataNotMatchingSig(t *testing.T) {
 	actual := toHstore("150 <13>1 2012-02-14T00:44:30+00:00 d.39c761b5-2e3a-4f93-9e68-2549c85650e2 app web.4 - - hello world")
@@ -59,3 +84,4 @@ func TestParseTime(t *testing.T) {
 		t.Errorf("\n e(%v) \n a(%v)", expected, actual)
 	}
 }
+*/
