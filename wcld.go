@@ -58,9 +58,20 @@ func readData(client net.Conn) {
 
 func handleInput(logLine string) {
 	log.Printf("action=handleInput logLine=%v", logLine)
-	logTime := SyslogData.FindStringSubmatch(logLine)[3]
+
+	if len(logLine) == 0 {
+	  return
+	}
+
+	logTime := ""
+	logString := SyslogData.FindStringSubmatch(logLine)
+	if len(logString) > 3 {
+	  logTime = logString[3]
+	}
+
 	logData := toHstore(logLine)
-	if len(logData) > 0 {
+
+	if len(logData) > 0 && len(logTime) > 0 {
 		log.Printf("action=insert logData=%v logTime=%v", logData, logTime)
 		_, err := pg.Exec("INSERT INTO log_data (data, time) VALUES ($1::hstore, $2)", logData, logTime)
 		if err != nil {
@@ -71,7 +82,11 @@ func handleInput(logLine string) {
 }
 
 func toHstore(logLine string) string {
-	message := SyslogData.FindStringSubmatch(logLine)[10]
+	message := ""
+	logString := SyslogData.FindStringSubmatch(logLine)
+	if len(logString) > 10 {
+	  message = logString[10]
+	}
 	words := KvData.FindAllString(message, -1)
 	max := len(words) - 1
 	hasSig := KvSig.FindAllString(message, -1)
