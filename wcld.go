@@ -70,7 +70,7 @@ func handleInput(logLine string) {
 	time, data := parseLogLine(logLine)
 	if len(time) > 0 && len(data) > 0 {
 		log.Printf("action=insert time=%v data=%v", time, data)
-		_, err := pg.Exec("INSERT INTO log_data(time, data) VALUES ($1::hstore, $2)", time, data)
+		_, err := pg.Exec("INSERT INTO log_data(time, data) VALUES ($1, $2::hstore)", time, data)
 		if err != nil {
 			log.Printf("error=true action=insert  message=%v", err)
 		}
