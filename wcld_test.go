@@ -5,9 +5,9 @@ import (
 )
 
 func TestGetPayload(t *testing.T) {
-	time, data := parseLogLine(`150 <13>1 2012-02-14T00:44:30+00:00 d.39c761b5-2e3a-4f93-9e68-2549c85650e2 app web.4 - - {"hello": "world"}`)
+	time, data := parseLogLine(`150 <13>1 2012-02-14T00:44:30+00:00 d.39c761b5-2e3a-4f93-9e68-2549c85650e2 app web.4 - - {"hello": "world", "time": 0.006}`)
 	expected_time := "2012-02-14T00:44:30+00:00"
-	expected_data := `"hello" => "world"`
+	expected_data := `"hello" => "world", "time" => "0.006"`
 
 	if time != expected_time {
 		t.Errorf("\n e(%v) \n a(%v)", expected_time, time)

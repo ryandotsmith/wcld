@@ -4,8 +4,9 @@ import (
 	"bufio"
 	"database/sql"
 	"encoding/json"
-	_ "github.com/bmizerany/pq"
+	"github.com/ryandotsmith/pq"
 	"log"
+	"fmt"
 	"net"
 	"os"
 	"regexp"
@@ -15,11 +16,18 @@ var syslogData = regexp.MustCompile(`^(\d+) (<\d+>\d+) (\d\d\d\d-\d\d-\d\dT\d\d:
 var pg *sql.DB
 
 func main() {
-	var err error
-	pg, err = sql.Open("postgres", os.Getenv("DATABASE_URL"))
+	cs, err := pq.ParseURL(os.Getenv("DATABASE_URL"))
 	if err != nil {
-		log.Fatalf("error=true action=db_conn message=%v", err)
+		log.Fatalf("fatal", "database_url_parse_error", "error", err.Error())
 	}
+
+	cs += " sslmode=require"
+
+	pg, err = sql.Open("postgres", cs)
+	if err != nil {
+		log.Fatalf("fatal", "database_connection_error", "error", err.Error())
+	}
+
 	log.Println("bind tcp", os.Getenv("PORT"))
 	server, err := net.Listen("tcp", "0.0.0.0:"+os.Getenv("PORT"))
 	if err != nil {
@@ -93,8 +101,14 @@ func getPayload(payLoadStr string) (payLoad map[string]interface{}) {
 }
 
 func hstore(data map[string]interface{}) (hstore string) {
+	max := len(data)
+	i := 0
 	for k, v := range data {
-		hstore += `"` + string(k) + `"` + ` => ` + `"` + v.(string) + `"`
+		i += 1
+		hstore += `"` + string(k) + `"` + ` => ` + `"` + fmt.Sprintf("%v",v) + `"`
+		if i != max {
+			hstore += ", "
+		}
 	}
 	return
 }
