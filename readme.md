@@ -63,59 +63,70 @@ CREATE INDEX recent_events on log_data (time) where expired = false;
 ```
 
 
-## Setup
+## Deploy to Heroku
 
-Download the binary from github and run it on Heroku using the null-buildpack.
+* Create app with [Go buildpack](https://gist.github.com/4984b5d9fe9244776197)
+* Attach database to app
+* Attach route to app
+* Point emitter app's at new wcld app
 
-### Deploy to Heroku
-
-Deploy the receiver app:
+### Create App
 
 ```bash
-$ mkdir wcld
+$ git clone git://github.com/ryandotsmith/wcld.git
 $ cd wcld
-$ mkdir bin
-$ curl -L -o wcld.tar.gz "https://github.com/downloads/ryandotsmith/wcld/wcld-0.0.3.tar.gz"
-$ tar -xvzf wcld.tar.gz -C bin/
-$ rm *.tar.gz
-$ echo "wcld: bin/wcld" >> Procfile
-$ git init
-$ git add .
-$ git commit -am "init"
-$ heroku create -s cedar --buildpack=git://github.com/ryandotsmith/null-buildpack.git
-$ heroku addons:add heroku-postgresql:ika --version=9.1
+$ heroku create -s cedar --buildpack=git@github.com:kr/heroku-buildpack-go.git#rc
+$ echo "wcld/wcld" >.godir
+$ echo "wcld: wcld" > Procfile
+$ git add . ; git commit -am "init"
+$ git push heroku master
+```
+
+### Attach Database
+
+```bash
+$ heroku addons:add heroku-postgresql:ika
 $ heroku pg:wait
 $ heroku pg:promote HEROKU_POSTGRESQL_<COLOR>
 $ heroku pg:psql
 psql- create extension hstore;
 psql- create table log_data (id bigserial, time timestamptz, data hstore);
 psql- create index index_log_data_by_time on log_data (time);
-$ git push heroku master
-$ heroku scale wcld=2
+```
+### Attach Route
+
+```bash
 $ heroku routes:create
 $ heroku routes:attach tcp://... wcld
 ```
 
-Use it to drain an emitter app:
+### Start WCLD Process
+
+```bash
+$ heroku scale wcld=2 #can use multiple processes
+```
+
+### Use it to drain an emitter app:
 
 ```bash
 $ heroku drains:add syslog://... -a other-app
 ```
 
-
 ### Build
 
 ```bash
 $ cd $GOROOT
-$ hg update weekly.2012-02-07
+$ hg update weekly
 $ cd src; ./all.bash
 $ cd $GOPATH/src
 $ git clone git://github.com/ryandotsmith/wcld.git
-$ go install wcld
+$ cd wcld
+$ go build .
 ```
 
 ### Test
 
 ```bash
-$ go test wcld
+$ cd $GOPATH/src/wcld
+$ go test .
 ```
