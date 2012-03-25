@@ -5,11 +5,13 @@ import (
 	"database/sql"
 	"encoding/json"
 	"github.com/ryandotsmith/pq"
+	"github.com/ryandotsmith/lscan"
 	"log"
 	"fmt"
 	"net"
 	"os"
 	"regexp"
+	"strings"
 )
 
 var syslogData = regexp.MustCompile(`^(\d+) (<\d+>\d+) (\d\d\d\d-\d\d-\d\dT\d\d:\d\d:\d\d(\.\d+)?[\-\+]\d\d:00) ([a-zA-Z0-9\.\-]+) ([a-zA-Z0-9]+) ([a-zA-Z0-9\.]+) ([-]) ([-]) (.*)`)
@@ -84,14 +86,12 @@ func parseLogLine(logLine string) (time string, data string) {
 	}
 
 	if len(matches) >= 10 {
-		data = hstore(getPayload(matches[10]))
-	}
-	return
-}
-
-func getPayload(payLoadStr string) (payLoad map[string]interface{}) {
-	if e := json.Unmarshal([]byte(payLoadStr), &payLoad); e != nil {
-		payLoad = map[string]interface{}{}
+		if d := getJson(matches[10]); len(d) > 0 {
+		  data = hstore(d)
+		}
+		if d := getKv(matches[10]); len(d) > 0 {
+		  data = hstore(d)
+		}
 	}
 	return
 }
@@ -106,5 +106,18 @@ func hstore(data map[string]interface{}) (hstore string) {
 			hstore += ", "
 		}
 	}
+	return
+}
+
+func getJson(payLoadStr string) (payLoad map[string]interface{}) {
+	if e := json.Unmarshal([]byte(payLoadStr), &payLoad); e != nil {
+		payLoad = map[string]interface{}{}
+	}
+	return
+}
+
+func getKv(payLoadStr string) (payLoad map[string]interface{}) {
+	r := strings.NewReader(payLoadStr)
+	payLoad = lscan.Parse(r)
 	return
 }
