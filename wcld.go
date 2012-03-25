@@ -66,10 +66,8 @@ func readData(client net.Conn) {
 }
 
 func handleInput(logLine string) {
-	log.Printf("action=handleInput logLine=%v", logLine)
 	time, data := parseLogLine(logLine)
 	if len(time) > 0 && len(data) > 0 {
-		log.Printf("action=insert time=%v data=%v", time, data)
 		_, err := pg.Exec("INSERT INTO log_data(time, data) VALUES ($1, $2::hstore)", time, data)
 		if err != nil {
 			log.Printf("error=true action=insert  message=%v", err)
@@ -92,9 +90,7 @@ func parseLogLine(logLine string) (time string, data string) {
 }
 
 func getPayload(payLoadStr string) (payLoad map[string]interface{}) {
-	log.Printf("payLoadStr=%v", payLoadStr)
 	if e := json.Unmarshal([]byte(payLoadStr), &payLoad); e != nil {
-		log.Printf("error=%v", e)
 		payLoad = map[string]interface{}{}
 	}
 	return
