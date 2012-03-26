@@ -115,7 +115,7 @@ func hstore(data map[string]interface{}) (hstore string) {
 	i := 0
 	for k, v := range data {
 		i += 1
-		hstore += `"` + string(k) + `"` + ` => ` + `"` + fmt.Sprintf("%v", v) + `"`
+		hstore += `"` + string(k) + `"` + ` => ` + fmt.Sprintf("%#v", v)
 		if i != max {
 			hstore += ", "
 		}
