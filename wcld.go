@@ -4,26 +4,29 @@ import (
 	"bufio"
 	"database/sql"
 	"encoding/json"
-	"github.com/ryandotsmith/pq"
-	"github.com/ryandotsmith/lscan"
-	"log"
 	"fmt"
+	"github.com/ryandotsmith/lscan"
+	"github.com/ryandotsmith/pq"
+	"log"
+	"flag"
 	"net"
 	"os"
 	"regexp"
 	"strings"
 )
 
+var sType *string = flag.String("f", "", "force parser to use json or kv")
+
 var syslogData = regexp.MustCompile(`^(\d+) (<\d+>\d+) (\d\d\d\d-\d\d-\d\dT\d\d:\d\d:\d\d(\.\d+)?[\-\+]\d\d:00) ([a-zA-Z0-9\.\-]+) ([a-zA-Z0-9]+) ([a-zA-Z0-9\.]+) ([-]) ([-]) (.*)`)
 var pg *sql.DB
 
 func main() {
+	flag.Parse()
+
 	cs, err := pq.ParseURL(os.Getenv("DATABASE_URL"))
 	if err != nil {
 		log.Fatalf("fatal", "database_url_parse_error", "error", err.Error())
 	}
-
-	cs += " sslmode=require"
 
 	pg, err = sql.Open("postgres", cs)
 	if err != nil {
@@ -72,7 +75,7 @@ func handleInput(logLine string) {
 	if len(time) > 0 && len(data) > 0 {
 		_, err := pg.Exec("INSERT INTO log_data(time, data) VALUES ($1, $2::hstore)", time, data)
 		if err != nil {
-			log.Printf("error=true action=insert  message=%v", err)
+			log.Printf("error=true action=insert  \n message=%v \n data=%v", err, data)
 		}
 	}
 	return
@@ -86,11 +89,22 @@ func parseLogLine(logLine string) (time string, data string) {
 	}
 
 	if len(matches) >= 10 {
-		if d := getJson(matches[10]); len(d) > 0 {
-		  data = hstore(d)
-		}
-		if d := getKv(matches[10]); len(d) > 0 {
-		  data = hstore(d)
+		sMatch := matches[10]
+		switch *sType {
+		case "json":
+			if d := getJson(sMatch); len(d) > 0 {
+				data = hstore(d)
+			}
+		case "kv":
+			if d := getKv(sMatch); len(d) > 0 {
+				data = hstore(d)
+			}
+		default:
+			if d := getJson(sMatch); len(d) > 0 {
+				data = hstore(d)
+			} else if d := getKv(sMatch); len(d) > 0 {
+				data = hstore(d)
+			}
 		}
 	}
 	return
@@ -101,7 +115,7 @@ func hstore(data map[string]interface{}) (hstore string) {
 	i := 0
 	for k, v := range data {
 		i += 1
-		hstore += `"` + string(k) + `"` + ` => ` + `"` + fmt.Sprintf("%v",v) + `"`
+		hstore += `"` + string(k) + `"` + ` => ` + `"` + fmt.Sprintf("%v", v) + `"`
 		if i != max {
 			hstore += ", "
 		}
