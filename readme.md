@@ -25,6 +25,8 @@ quickly group our app's average response time grouped by hour:
 $ heroku pg:psql
 ```
 
+### Avg
+
 ```sql
 SELECT
   date_trunc('hour', time) AS time_group,
@@ -49,6 +51,38 @@ WHERE
  2012-02-14 01:00:00+00 | 00:00:00.073475
  2012-02-14 02:00:00+00 | 00:00:00.072609
  2012-02-14 03:00:00+00 | 00:00:00.073081
+```
+
+### Percentile
+
+```sql
+SELECT
+  perctile,
+  avg(elapsed_time::interval)
+FROM (
+  SELECT
+    data -> 'elapsed_time' as elapsed_time,
+    ntile(100) over (order by (data -> 'elapsed_time')) as perctile
+  FROM
+    log_data
+  WHERE
+    data -> 'action' = 'find_prev_rec'
+    and
+    time > now() - '9 minutes'::interval
+    and
+    expired = false
+) x
+WHERE
+  perctile = 95
+GROUP BY perctile
+;
+```
+
+```
+ perctile |       avg       
+----------+-----------------
+       95 | 00:00:00.008944
+(1 row)
 ```
 
 ### Indicies
