@@ -79,7 +79,7 @@ GROUP BY perctile
 ```
 
 ```
- perctile |       avg       
+ perctile |       avg
 ----------+-----------------
        95 | 00:00:00.008944
 (1 row)
@@ -111,7 +111,7 @@ $ git clone git://github.com/ryandotsmith/wcld.git
 $ cd wcld
 $ heroku create -s cedar --buildpack=git@github.com:kr/heroku-buildpack-go.git#rc
 $ echo "wcld/wcld" >.godir
-$ echo "wcld: wcld" > Procfile
+$ echo "wcld: bin/wcld" > Procfile
 $ git add . ; git commit -am "init"
 $ git push heroku master
 ```
