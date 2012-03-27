@@ -1,1 +1,0 @@
-wcld: bin/wcld
