@@ -111,7 +111,7 @@ $ git clone git://github.com/ryandotsmith/wcld.git
 $ cd wcld
 $ heroku create -s cedar --buildpack=git@github.com:kr/heroku-buildpack-go.git#rc
 $ echo "wcld/wcld" >.godir
-$ echo "wcld: bin/wcld" > Procfile
+$ echo "wcld: bin/wcld -f=\"kv\"" > Procfile #or -f="json"
 $ git add . ; git commit -am "init"
 $ git push heroku master
 ```
