@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"github.com/ryandotsmith/lscan"
 	"github.com/ryandotsmith/pq"
-	"log"
 	"flag"
 	"net"
 	"os"
@@ -25,18 +24,21 @@ func main() {
 
 	cs, err := pq.ParseURL(os.Getenv("DATABASE_URL"))
 	if err != nil {
-		log.Fatalf("fatal", "database_url_parse_error", "error", err.Error())
+		fmt.Println("unable to parse database url")
+		os.Exit(1)
 	}
 
 	pg, err = sql.Open("postgres", cs)
 	if err != nil {
-		log.Fatalf("fatal", "database_connection_error", "error", err.Error())
+		fmt.Println("unable to connect to database")
+		os.Exit(1)
 	}
 
-	log.Println("bind tcp", os.Getenv("PORT"))
+	fmt.Println("bind tcp", os.Getenv("PORT"))
 	server, err := net.Listen("tcp", "0.0.0.0:"+os.Getenv("PORT"))
 	if err != nil {
-		log.Fatalf("error=true action=net_listen message=%v", err)
+		fmt.Println("unable to bind tcp")
+		os.Exit(1)
 	}
 	conns := clientConns(server)
 	for {
@@ -50,9 +52,9 @@ func clientConns(listener net.Listener) (ch chan net.Conn) {
 		for {
 			client, err := listener.Accept()
 			if err != nil {
-				log.Printf("error=true action=tcp_accept message=%v", err)
+				fmt.Printf("error=true action=tcp_accept message=%v\n", err)
 			}
-			log.Printf("action=tcp_accept remote= %v", client.RemoteAddr())
+			fmt.Printf("action=tcp_accept remote= %v\n", client.RemoteAddr())
 			ch <- client
 		}
 	}()
@@ -75,7 +77,7 @@ func handleInput(logLine string) {
 	if len(time) > 0 && len(data) > 0 {
 		_, err := pg.Exec("INSERT INTO log_data(time, data) VALUES ($1, $2::hstore)", time, data)
 		if err != nil {
-			log.Printf("error=true action=insert  \n message=%v \n data=%v", err, data)
+			fmt.Printf("error=true action=insert  \n message=%v \n data=%v\n", err, data)
 		}
 	}
 	return
