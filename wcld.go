@@ -3,19 +3,17 @@ package main
 import (
 	"bufio"
 	"database/sql"
-	_ "github.com/bmizerany/pq.go"
+	_ "github.com/bmizerany/pq"
 	"log"
 	"net"
 	"os"
 	"regexp"
-	"strings"
 )
 
 var pg *sql.DB
 
-var KvSig = regexp.MustCompile(`([a-zA-Z0-9\.\_\-\:\/])=([a-zA-Z0-9\.\_\-\:\/\"\'])`)
-var KvData = regexp.MustCompile(`([a-zA-Z0-9\.\_\-\:\/]+)(=?)("[^"]+"|'[^']+'|[a-zA-Z0-9\.\_\-\:\/]*)`)
-var SyslogData = regexp.MustCompile(`^(\d+) (<\d+>\d+) (\d\d\d\d-\d\d-\d\dT\d\d:\d\d:\d\d(\.\d+)?[\-\+]\d\d:00) ([a-zA-Z0-9\.\-]+) ([a-zA-Z0-9]+) ([a-zA-Z0-9\.]+) ([-]) ([-]) (.*)`)
+var LineRe = regexp.MustCompile(`^\d+ \<\d+\>1 \d\d\d\d-\d\d-\d\dT\d\d:\d\d:\d\d\+00:00 d\.[a-z0-9-]+ ([a-z0-9\-\_\.]+) ([a-z0-9\-\_\.]+) \- \- (.*)$`)
+var AttrsRe = regexp.MustCompile(`( *)([a-zA-Z0-9\_\-\.]+)=?(([a-zA-Z0-9\.\-\_\.]+)|("([^\"]+)"))?`)
 
 func main() {
 	var err error
@@ -62,11 +60,9 @@ func readData(client net.Conn) {
 
 func handleInput(logLine string) {
 	log.Printf("action=handleInput logLine=%v", logLine)
-	logTime := SyslogData.FindStringSubmatch(logLine)[3]
-	logData := toHstore(logLine)
-	if len(logData) > 0 {
-		log.Printf("action=insert logData=%v logTime=%v", logData, logTime)
-		_, err := pg.Exec("INSERT INTO log_data (data, time) VALUES ($1::hstore, $2)", logData, logTime)
+	data := hstore(parse(logLine))
+	if len(data) > 0 {
+		_, err := pg.Exec("INSERT INTO log_data (data, time) VALUES ($1::hstore, now())", data)
 		if err != nil {
 			log.Printf("error=true action=insert  message=%v", err)
 		}
@@ -74,29 +70,34 @@ func handleInput(logLine string) {
 	return
 }
 
-func toHstore(logLine string) string {
-	message := SyslogData.FindStringSubmatch(logLine)[10]
-	words := KvData.FindAllString(message, -1)
-	max := len(words) - 1
-	hasSig := KvSig.FindAllString(message, -1)
-	kvs := ""
-
-	if hasSig != nil {
-		for i, elt := range words {
-			if KvSig.MatchString(elt) {
-				kvs += elt
-			} else if m, _ := regexp.MatchString(`\w+=`, elt); m {
-				kvs += elt + `""`
-			} else {
-				kvs += `"` + elt + `"` + "=true"
-			}
-			if i != max {
-				kvs += ", "
-			}
+func hstore(m map[string]string) (s string) {
+	i := 0
+	max := len(m)
+	for k, v := range m {
+		s += k + `=>` + v
+		i += 1
+		if i != max {
+			s += ", "
 		}
-	} else {
-		message = strings.Replace(message, `"`, `'`, -1)
-		kvs = `message="` + message + `"`
 	}
-	return strings.Replace(kvs, "=", "=>", -1)
+	return
+}
+
+func parse(logLine string) map[string]string {
+	data := LineRe.FindStringSubmatch(logLine)[3]
+	words := AttrsRe.FindAllStringSubmatch(data, -1)
+	kvs := make(map[string]string)
+	for _, match := range words {
+		k := match[2]
+		v1 := match[3]
+		v2 := match[5]
+		if len(v1) != 0 {
+			kvs[k] = v1
+		} else if len(v2) != 0 {
+			kvs[k] = v2
+		} else {
+			kvs[k] = "true"
+		}
+	}
+	return kvs
 }
