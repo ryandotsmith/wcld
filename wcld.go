@@ -3,7 +3,7 @@ package main
 import (
 	"bufio"
 	"database/sql"
-	_ "github.com/bmizerany/pq"
+	"github.com/bmizerany/pq"
 	"log"
 	"net"
 	"os"
@@ -12,12 +12,17 @@ import (
 
 var pg *sql.DB
 
-var LineRe = regexp.MustCompile(`^\d+ \<\d+\>1 \d\d\d\d-\d\d-\d\dT\d\d:\d\d:\d\d\+00:00 d\.[a-z0-9\-]+ ([a-z0-9\-\_\.]+) ([a-z0-9\-\_\.]+) \- \- (.*)$`)
+var LineRe = regexp.MustCompile(`\d+ \<\d+\>1 \d\d\d\d-\d\d-\d\dT\d\d:\d\d:\d\d\+00:00 d\.[a-z0-9\-]+ ([a-z0-9\-\_\.]+) ([a-z0-9\-\_\.]+) \- \- (.*)$`)
 var AttrsRe = regexp.MustCompile(`( *)([a-zA-Z0-9\_\-\.]+)=?(([a-zA-Z0-9\.\-\_\.]+)|("([^\"]+)"))?`)
 
 func main() {
-	var err error
-	pg, err = sql.Open("postgres", os.Getenv("DATABASE_URL"))
+	cs, err := pq.ParseURL(os.Getenv("DATABASE_URL"))
+	if err != nil {
+		log.Println("unable to parse database url")
+		os.Exit(1)
+	}
+
+	pg, err = sql.Open("postgres", cs)
 	if err != nil {
 		log.Fatalf("error=true action=db_conn message=%v", err)
 	}
@@ -59,7 +64,6 @@ func readData(client net.Conn) {
 }
 
 func handleInput(logLine string) {
-	log.Printf("action=handleInput logLine=%v", logLine)
 	data := hstore(parse(logLine))
 	if len(data) > 0 {
 		_, err := pg.Exec("INSERT INTO log_data (data, time) VALUES ($1::hstore, now())", data)
@@ -84,20 +88,25 @@ func hstore(m map[string]string) (s string) {
 }
 
 func parse(logLine string) map[string]string {
-	data := LineRe.FindStringSubmatch(logLine)[3]
-	words := AttrsRe.FindAllStringSubmatch(data, -1)
 	kvs := make(map[string]string)
-	for _, match := range words {
-		k := match[2]
-		v1 := match[3]
-		v2 := match[5]
-		if len(v1) != 0 {
-			kvs[k] = v1
-		} else if len(v2) != 0 {
-			kvs[k] = v2
-		} else {
-			kvs[k] = "true"
+	data := LineRe.FindStringSubmatch(logLine)
+
+	if len(data) > 0 {
+		d := data[3]
+		words := AttrsRe.FindAllStringSubmatch(d, -1)
+		for _, match := range words {
+			k := match[2]
+			v1 := match[3]
+			v2 := match[5]
+			if len(v1) != 0 {
+				kvs[k] = v1
+			} else if len(v2) != 0 {
+				kvs[k] = v2
+			} else {
+				kvs[k] = "true"
+			}
 		}
+
 	}
 	return kvs
 }
