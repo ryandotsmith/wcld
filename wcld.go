@@ -8,11 +8,12 @@ import (
 	"net"
 	"os"
 	"regexp"
+	"strings"
 )
 
 var pg *sql.DB
 
-var LineRe = regexp.MustCompile(`\d+ \<\d+\>1 \d\d\d\d-\d\d-\d\dT\d\d:\d\d:\d\d\+00:00 d\.[a-z0-9\-]+ ([a-z0-9\-\_\.]+) ([a-z0-9\-\_\.]+) \- \- (.*)$`)
+var LineRe = regexp.MustCompile(`\d+ \<\d+\>1 \d\d\d\d-\d\d-\d\dT\d\d:\d\d:\d\d\+00:00 d\.[a-z0-9-]+ ([a-z0-9\-\_\.]+) ([a-z0-9\-\_\.]+) \- \- (.*)`)
 var AttrsRe = regexp.MustCompile(`( *)([a-zA-Z0-9\_\-\.]+)=?(([a-zA-Z0-9\.\-\_\.]+)|("([^\"]+)"))?`)
 
 func main() {
@@ -57,19 +58,38 @@ func clientConns(listener net.Listener) (ch chan net.Conn) {
 
 func readData(client net.Conn) {
 	b := bufio.NewReadWriter(bufio.NewReader(client), bufio.NewWriter(client))
+	i := 0
+	var err error
+	var tx *sql.Tx
 	for {
-		line, err := b.ReadString('\n')
-		if err != nil {
-			break
+		if i == 0 {
+			tx, err = pg.Begin()
+			if err != nil {
+				log.Printf("error=true action=begin message=%v", err)
+			}
+			i += 1
+		} else if i == 10000 {
+			err = tx.Commit()
+			if err != nil {
+				log.Printf("error=true action=commit message=%v", err)
+			}
+			log.Printf("action=commit")
+			i = 0
+		} else {
+			line, err := b.ReadString('\n')
+			if err != nil {
+				break
+			}
+			handleInput(*tx, line)
+			i += 1
 		}
-		handleInput(line)
 	}
 }
 
-func handleInput(logLine string) {
+func handleInput(tx sql.Tx, logLine string) {
 	data := hstore(parse(logLine))
 	if len(data) > 0 {
-		_, err := pg.Exec("INSERT INTO log_data (data, time) VALUES ($1::hstore, now())", data)
+		_, err := tx.Exec("INSERT INTO log_data (data, time) VALUES ($1::hstore, now())", data)
 		if err != nil {
 			log.Printf("error=true action=insert  \n message=%v \n data=%v\n", err, data)
 		}
@@ -91,6 +111,7 @@ func hstore(m map[string]string) (s string) {
 }
 
 func parse(logLine string) map[string]string {
+	logLine = strings.Trim(logLine, "\n")
 	kvs := make(map[string]string)
 	data := LineRe.FindStringSubmatch(logLine)
 
