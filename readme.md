@@ -2,12 +2,28 @@
 
 wc -l (daemon)
 
-Wcld is a process that will listen on TCP $PORT for incoming syslog data.
+Wcld is a process that will listen on TCP $PORT for incoming log data.
 Wcld will parse the *crnl* separated data looking for key=value substrings.
 When a key=value substring is found, wcld will write the keys and values
 to an hstore column in a PostgreSQL database.
 
 ## Usage
+
+### Durability
+
+Wcld can be configured for maximum throughput by relaxing it's durability constraints.
+There is a buffer for the database writing mechanism that can be configured. A buffer size
+of 1 will force wcld to commit each log line that is consumed. A buffer of size 1000 will
+allow wcld to write 1000 log lines to the database before commiting the transaction. Of course
+if the program crashes before the transaction is commited then the data will be lost.
+
+The durability can be configured by using the `-d` flag. The default is 1.
+
+```bash
+$ bin/wcld -d=1000
+```
+
+### Queries
 
 Once your applications are draining their logs into a wcld process, you can
 begin reporting our your log data.
@@ -25,7 +41,7 @@ quickly group our app's average response time grouped by hour:
 $ heroku pg:psql
 ```
 
-### Avg
+#### Avg
 
 ```sql
 SELECT
@@ -53,7 +69,7 @@ WHERE
  2012-02-14 03:00:00+00 | 00:00:00.073081
 ```
 
-### Percentile
+#### Percentile
 
 ```sql
 SELECT
@@ -85,7 +101,7 @@ GROUP BY perctile
 (1 row)
 ```
 
-### Indicies
+### Indexing
 
 One possible indexing strategy:
 
@@ -109,9 +125,9 @@ CREATE INDEX recent_events on log_data (time) where expired = false;
 ```bash
 $ git clone git://github.com/ryandotsmith/wcld.git
 $ cd wcld
-$ heroku create -s cedar --buildpack=git@github.com:kr/heroku-buildpack-go.git#rc
+$ heroku create -s cedar --buildpack=git@github.com:kr/heroku-buildpack-go.git
 $ echo "wcld/wcld" >.godir
-$ echo "wcld: bin/wcld -f=\"kv\"" > Procfile #or -f="json"
+$ echo "wcld: bin/wcld -f=\"kv\"" > Procfile
 $ git add . ; git commit -am "init"
 $ git push heroku master
 ```
@@ -124,8 +140,8 @@ $ heroku pg:wait
 $ heroku pg:promote HEROKU_POSTGRESQL_<COLOR>
 $ heroku pg:psql
 psql- create extension hstore;
-psql- create table log_data (id bigserial, time timestamptz, data hstore);
-psql- create index index_log_data_by_time on log_data (time);
+psql- create table events (time timestamptz, data hstore);
+psql- create index index_events_by_time on events (time);
 ```
 ### Attach Route
 
