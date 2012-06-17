@@ -19,7 +19,7 @@ var LineRe = regexp.MustCompile(`\d+ \<\d+\>1 \d\d\d\d-\d\d-\d\dT\d\d:\d\d:\d\d\
 var AttrsRe = regexp.MustCompile(`( *)([a-zA-Z0-9\_\-\.]+)=?(([a-zA-Z0-9\.\-\_\.]+)|("([^\"]+)"))?`)
 
 func main() {
-	flag.parse()
+	flag.Parse()
 	cs, err := pq.ParseURL(os.Getenv("DATABASE_URL"))
 	if err != nil {
 		log.Println("unable to parse database url")
@@ -71,7 +71,7 @@ func readData(client net.Conn) {
 				log.Printf("error=true action=begin message=%v", err)
 			}
 			i += 1
-		} else if i == (checkpoint + 1) {
+		} else if i == (*checkpoint + 1) {
 			//checkpoint is set by flag
 			// we inc checkpoint for the case when it is set to 1
 			err = tx.Commit()
