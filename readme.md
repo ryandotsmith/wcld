@@ -125,7 +125,7 @@ CREATE INDEX recent_events on log_data (time) where expired = false;
 ```bash
 $ git clone git://github.com/ryandotsmith/wcld.git
 $ cd wcld
-$ heroku create -s cedar --buildpack=git@github.com:kr/heroku-buildpack-go.git
+$ heroku create -s cedar --buildpack=https://github.com/kr/heroku-buildpack-go
 $ echo "wcld/wcld" >.godir
 $ echo "wcld: bin/wcld -f=\"kv\"" > Procfile
 $ git add . ; git commit -am "init"
